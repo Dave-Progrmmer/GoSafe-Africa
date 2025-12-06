@@ -23,6 +23,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'));
 
+console.log('🔧 Environment:', process.env.NODE_ENV);
+console.log('🔧 MongoDB URI configured:', !!process.env.MONGODB_URI);
+console.log('🔧 JWT Secret configured:', !!process.env.JWT_SECRET);
+
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({
