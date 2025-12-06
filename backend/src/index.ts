@@ -52,24 +52,28 @@ app.use((req, res) => {
   });
 });
 
+
 // Error handler (must be last)
 app.use(errorHandler);
 
-// Start server
-const startServer = async () => {
-  try {
-    await connectDB();
-    
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
-
-startServer();
-
+// Export app for Vercel
 export default app;
+
+// Start server (only in local/non-serverless)
+if (process.env.VERCEL !== '1') {
+  const startServer = async () => {
+    try {
+      await connectDB();
+      
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      });
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      process.exit(1);
+    }
+  };
+
+  startServer();
+}
