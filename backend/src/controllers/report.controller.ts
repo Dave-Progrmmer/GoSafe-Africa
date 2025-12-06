@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Report, Confirmation, User } from '../models';
 import { ValidationError, NotFoundError, ConflictError } from '../utils/AppError';
-import { saveFileLocally } from '../services/storage.service';
+import { uploadPhoto } from '../services/storage.service';
 
 export const createReport = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -26,11 +26,11 @@ export const createReport = async (req: Request, res: Response, next: NextFuncti
     if (photos && Array.isArray(photos)) {
       for (const photo of photos.slice(0, 3)) { // Max 3 photos
         if (photo.startsWith('data:image')) {
-          // Save base64 image locally
+          // Upload to Cloudinary (or local if not configured)
           const matches = photo.match(/^data:image\/(\w+);base64,(.+)$/);
           if (matches) {
             const buffer = Buffer.from(matches[2], 'base64');
-            const url = await saveFileLocally(buffer, `photo.${matches[1]}`);
+            const url = await uploadPhoto(buffer, `photo.${matches[1]}`);
             photoUrls.push(url);
           }
         } else {
