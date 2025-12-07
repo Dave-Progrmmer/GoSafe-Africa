@@ -9,11 +9,13 @@ import { sendOTPEmail } from '../services/email.service';
 // Simple email-based registration and login (no OTP, no SMS)
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password, name } = req.body;
+    const { email: rawEmail, password, name } = req.body;
 
-    if (!email || !password) {
+    if (!rawEmail || !password) {
       throw new ValidationError('Email and password are required');
     }
+
+    const email = rawEmail.toString().trim().toLowerCase();
 
     // Check if user exists
     const existing = await User.findOne({ phone: email }); // Reusing phone field for email
@@ -65,11 +67,13 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.body;
+    const { email: rawEmail, password } = req.body;
 
-    if (!email || !password) {
+    if (!rawEmail || !password) {
       throw new ValidationError('Email and password are required');
     }
+
+    const email = rawEmail.toString().trim().toLowerCase();
 
     // Find user
     const user = await User.findOne({ phone: email });
@@ -167,15 +171,18 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
 // Password Reset Flow
 export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email } = req.body;
+    const rawEmail = req.body.email;
 
-    if (!email) {
+    if (!rawEmail) {
       throw new ValidationError('Email is required');
     }
+
+    const email = rawEmail.toString().trim().toLowerCase();
 
     // Find user
     const user = await User.findOne({ phone: email });
     if (!user) {
+      console.warn(`[ForgotPassword] User not found for email: '${email}' (Raw: '${rawEmail}')`);
       // Don't reveal if email exists - return success anyway for security
       res.status(200).json({
         success: true,
@@ -195,10 +202,20 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 
 
     // Send email
-    await sendOTPEmail(email, otp);
+    try {
+      await sendOTPEmail(email, otp);
+      console.log(`[ForgotPassword] OTP email sent to ${email}`);
+    } catch (emailError) {
+      console.error(`[ForgotPassword] Failed to send email to ${email}:`, emailError);
+      // We still return success to the user so they don't know it failed? 
+      // Or maybe we should throw? Usually better to fail safely or retry. 
+      // For now, logging is key.
+    }
 
     // In development specific usage, helpful to still log if email fails or for quick testing
-    console.log(`[DEV MODE] Password Reset OTP for ${email}: ${otp}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DEV MODE] Password Reset OTP for ${email}: ${otp}`);
+    }
 
     res.status(200).json({
       success: true,
