@@ -4,6 +4,7 @@ import { generateOTP, hashOTP, getOTPExpiry, verifyOTP, hashPassword, comparePas
 import { generateAccessToken, generateRefreshToken, hashToken, getRefreshTokenExpiry } from '../utils/jwt';
 import { Session } from '../models';
 import { ValidationError, UnauthorizedError } from '../utils/AppError';
+import { sendOTPEmail } from '../services/email.service';
 
 // Simple email-based registration and login (no OTP, no SMS)
 export const register = async (req: Request, res: Response, next: NextFunction) => {
@@ -192,10 +193,12 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     user.resetOtpExpiry = otpExpiresAt;
     await user.save();
 
-    // In production, send email here. For development, log to console.
-    console.log(`\n========================================`);
-    console.log(`PASSWORD RESET OTP for ${email}: ${otp}`);
-    console.log(`========================================\n`);
+
+    // Send email
+    await sendOTPEmail(email, otp);
+
+    // In development specific usage, helpful to still log if email fails or for quick testing
+    console.log(`[DEV MODE] Password Reset OTP for ${email}: ${otp}`);
 
     res.status(200).json({
       success: true,
