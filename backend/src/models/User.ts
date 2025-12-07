@@ -12,6 +12,10 @@ export interface IUser extends Document {
   phoneVerified: boolean;
   otpHash?: string;
   otpExpiry?: Date;
+  resetOtp?: string;
+  resetOtpExpiry?: Date;
+  resetToken?: string;
+  resetTokenExpiry?: Date;
   profile: {
     name?: string;
     avatar?: string;
@@ -43,6 +47,10 @@ const UserSchema = new Schema<IUser>(
     phoneVerified: { type: Boolean, default: false },
     otpHash: String,
     otpExpiry: Date,
+    resetOtp: String,
+    resetOtpExpiry: Date,
+    resetToken: String,
+    resetTokenExpiry: Date,
     profile: {
       name: String,
       avatar: String
