@@ -1,29 +1,37 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-export const sendEmail = async ({ to, subject, html }: { to: string; subject: string; html: string }) => {
+interface EmailOptions {
+  to: string;
+  subject: string;
+  html: string;
+}
+
+export const sendEmail = async ({ to, subject, html }: EmailOptions) => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.warn('⚠️ Email credentials not found in .env. Email sending skipped.');
+    if (!process.env.RESEND_API_KEY) {
+      console.warn('⚠️ RESEND_API_KEY not found in .env. Email sending skipped.');
       console.log(`[MOCK EMAIL] To: ${to}, Subject: ${subject}`);
       return false;
     }
 
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"GoSafe Africa" <noreply@gosafeafrica.com>',
+    // For free tier, you must send FROM onboarding@resend.dev unless you verify a domain
+    const from = process.env.EMAIL_FROM_RESEND || 'onboarding@resend.dev';
+
+    const data = await resend.emails.send({
+      from,
       to,
       subject,
       html,
     });
 
-    console.log(`📧 Email sent: ${info.messageId}`);
+    if (data.error) {
+        console.error('❌ Resend API Error:', data.error);
+        return false;
+    }
+
+    console.log(`📧 Email sent successfully: ${data.data?.id}`);
     return true;
   } catch (error) {
     console.error('❌ Error sending email:', error);
