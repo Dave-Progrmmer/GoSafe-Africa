@@ -31,11 +31,19 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Don't retry if we're already checking for refresh token or if it's a specific auth route that shouldn't need a token
+    // The verify-reset-otp route typically returns 401 for invalid OTP, which shouldn't trigger a token refresh
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('verify-reset-otp')) {
       originalRequest._retry = true;
       
       try {
         const refreshToken = await AsyncStorage.getItem('refreshToken');
+        
+        // If no refresh token, we can't refresh. Just return the original error.
+        if (!refreshToken) {
+            return Promise.reject(error);
+        }
+
         const response = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
         
         await AsyncStorage.setItem('accessToken', response.data.data.accessToken);
@@ -43,7 +51,11 @@ apiClient.interceptors.response.use(
         
         return apiClient(originalRequest);
       } catch (refreshError) {
-        await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+        // Only clear storage if we actually tried to refresh and failed
+        const refreshToken = await AsyncStorage.getItem('refreshToken');
+        if (refreshToken) {
+             await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+        }
         return Promise.reject(refreshError);
       }
     }
