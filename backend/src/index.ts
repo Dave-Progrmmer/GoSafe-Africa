@@ -39,10 +39,12 @@ app.get('/health', (req, res) => {
 // Import routes
 import authRoutes from './routes/auth.routes';
 import reportRoutes from './routes/report.routes';
+import notificationRoutes from './routes/notification.routes';
 
-// Mount API routes
+// Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // 404 handler (Express 5 compatible)
 app.use((req, res) => {

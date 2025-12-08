@@ -110,6 +110,16 @@ export const api = {
   
   deleteReport: (id: string) =>
     apiClient.delete(`/reports/${id}`).then(res => res.data),
+
+  // Notifications
+  getNotifications: (page: number = 1, limit: number = 20) =>
+    apiClient.get('/notifications', { params: { page, limit } }).then(res => res.data),
+
+  markNotificationRead: (id: string) =>
+    apiClient.put(`/notifications/${id}/read`).then(res => res.data),
+
+  markAllNotificationsRead: () =>
+    apiClient.put('/notifications/read-all').then(res => res.data),
 };
 
 export default api;
